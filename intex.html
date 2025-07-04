@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>File Upload, Play, and Delete</title>
+  <style>
+    .file-list { margin-top: 20px; }
+    .file-item { margin-bottom: 10px; }
+    .preview { margin-top: 10px; }
+    button { margin-left: 10px; }
+  </style>
+</head>
+<body>
+  <h2>Upload and Manage Files</h2>
+  <input type="file" id="fileInput" multiple />
+  <div class="file-list" id="fileList"></div>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const fileListDiv = document.getElementById('fileList');
+    let files = [];
+
+    fileInput.addEventListener('change', (event) => {
+      for (let file of event.target.files) {
+        files.push(file);
+      }
+      renderFileList();
+      fileInput.value = '';
+    });
+
+    function renderFileList() {
+      fileListDiv.innerHTML = '';
+      files.forEach((file, idx) => {
+        const div = document.createElement('div');
+        div.className = 'file-item';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = file.name;
+
+        const delBtn = document.createElement('button');
+        delBtn.textContent = 'Delete';
+        delBtn.onclick = () => {
+          files.splice(idx, 1);
+          renderFileList();
+        };
+
+        div.appendChild(nameSpan);
+        div.appendChild(delBtn);
+
+        // Preview audio/video
+        if (file.type.startsWith('audio/')) {
+          const audio = document.createElement('audio');
+          audio.controls = true;
+          audio.className = 'preview';
+          audio.src = URL.createObjectURL(file);
+          div.appendChild(audio);
+        } else if (file.type.startsWith('video/')) {
+          const video = document.createElement('video');
+          video.controls = true;
+          video.width = 320;
+          video.height = 180;
+          video.className = 'preview';
+          video.src = URL.createObjectURL(file);
+          div.appendChild(video);
+        }
+
+        fileListDiv.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>
