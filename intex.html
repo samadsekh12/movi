@@ -3,65 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Manager - Upload, Play, and Delete</title>
+    <title>Simple File Manager</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
-
         body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
             padding: 20px;
-            background-color: #f5f5f5;
+            background-color: #f0f0f0;
         }
 
         .container {
-            max-width: 800px;
-            margin: 0 auto;
             background-color: white;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
-        h2 {
+        h1 {
+            text-align: center;
             color: #333;
-            margin-bottom: 20px;
-            text-align: center;
         }
 
-        .upload-section {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
+        .upload-area {
             border: 2px dashed #ccc;
-            border-radius: 8px;
-        }
-
-        .upload-section.dragover {
-            background-color: #e9ecef;
-            border-color: #007bff;
-        }
-
-        #fileInput {
-            display: none;
-        }
-
-        .upload-btn {
-            background-color: #007bff;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-bottom: 10px;
-        }
-
-        .upload-btn:hover {
-            background-color: #0056b3;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            border-radius: 5px;
         }
 
         .file-list {
@@ -69,246 +38,144 @@
         }
 
         .file-item {
-            display: flex;
-            align-items: center;
-            padding: 15px;
+            background: #f8f9fa;
+            padding: 10px;
             margin-bottom: 10px;
-            background-color: #f8f9fa;
-            border-radius: 4px;
-            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            border: 1px solid #ddd;
         }
 
         .file-info {
-            flex-grow: 1;
-        }
-
-        .file-name {
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .file-size {
-            font-size: 12px;
-            color: #6c757d;
-        }
-
-        .preview {
-            margin: 10px 0;
-            max-width: 100%;
+            margin-bottom: 10px;
         }
 
         .delete-btn {
-            background-color: #dc3545;
+            background: #ff4444;
             color: white;
             border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
+            padding: 5px 10px;
+            border-radius: 3px;
             cursor: pointer;
-            margin-left: 10px;
         }
 
-        .delete-btn:hover {
-            background-color: #c82333;
+        .upload-btn {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 10px;
         }
 
-        .file-type-icon {
-            font-size: 24px;
-            margin-right: 15px;
-            color: #6c757d;
+        audio, video {
+            max-width: 100%;
+            margin-top: 10px;
         }
 
-        .progress-bar {
-            width: 100%;
-            height: 4px;
-            background-color: #e9ecef;
-            border-radius: 2px;
-            margin-top: 5px;
-        }
-
-        .progress {
-            width: 0%;
-            height: 100%;
-            background-color: #007bff;
-            border-radius: 2px;
-            transition: width 0.3s ease;
-        }
-
-        .error-message {
-            color: #dc3545;
-            margin-top: 5px;
-            font-size: 14px;
+        img {
+            max-width: 300px;
+            max-height: 200px;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>File Manager</h2>
+        <h1>Simple File Manager</h1>
         
-        <div class="upload-section" id="dropZone">
-            <input type="file" id="fileInput" multiple accept="audio/*,video/*,image/*" />
+        <div class="upload-area">
             <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
-                Choose Files
+                Select Files
             </button>
-            <p>or drag and drop files here</p>
-            <div id="errorMessage" class="error-message"></div>
+            <input type="file" id="fileInput" style="display: none" multiple 
+                   accept="audio/*,video/*,image/*">
+            <p>Supported files: Audio, Video, Images</p>
         </div>
 
-        <div class="file-list" id="fileList"></div>
+        <div id="fileList" class="file-list"></div>
     </div>
 
     <script>
+        // Get DOM elements
         const fileInput = document.getElementById('fileInput');
-        const fileListDiv = document.getElementById('fileList');
-        const dropZone = document.getElementById('dropZone');
-        const errorMessage = document.getElementById('errorMessage');
-        let files = [];
+        const fileList = document.getElementById('fileList');
 
-        // File size limit (50MB)
-        const MAX_FILE_SIZE = 50 * 1024 * 1024;
+        // Store files
+        let uploadedFiles = [];
 
-        // Supported file types
-        const SUPPORTED_TYPES = [
-            'audio/',
-            'video/',
-            'image/'
-        ];
-
-        // Handle drag and drop
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('dragover');
-        });
-
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('dragover');
-        });
-
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-            handleFiles(e.dataTransfer.files);
-        });
-
-        // Handle file input change
-        fileInput.addEventListener('change', (e) => {
-            handleFiles(e.target.files);
-            fileInput.value = '';
-        });
-
-        function handleFiles(fileList) {
-            errorMessage.textContent = '';
+        // Handle file selection
+        fileInput.addEventListener('change', function(e) {
+            const files = e.target.files;
             
-            for (let file of fileList) {
-                // Check file size
-                if (file.size > MAX_FILE_SIZE) {
-                    errorMessage.textContent = `File ${file.name} is too large. Maximum size is 50MB.`;
-                    continue;
+            for(let file of files) {
+                // Check if file is audio, video, or image
+                if(file.type.startsWith('audio/') || 
+                   file.type.startsWith('video/') || 
+                   file.type.startsWith('image/')) {
+                    
+                    uploadedFiles.push(file);
                 }
-
-                // Check file type
-                if (!SUPPORTED_TYPES.some(type => file.type.startsWith(type))) {
-                    errorMessage.textContent = `File ${file.name} is not supported. Please upload audio, video, or image files.`;
-                    continue;
-                }
-
-                files.push({
-                    file: file,
-                    progress: 0
-                });
             }
-            renderFileList();
-        }
+            
+            displayFiles();
+            fileInput.value = ''; // Reset input
+        });
 
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
+        // Display files
+        function displayFiles() {
+            fileList.innerHTML = ''; // Clear current list
 
-        function renderFileList() {
-            fileListDiv.innerHTML = '';
-            files.forEach((fileObj, idx) => {
-                const file = fileObj.file;
-                const div = document.createElement('div');
-                div.className = 'file-item';
+            uploadedFiles.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
 
+                // File info
                 const fileInfo = document.createElement('div');
                 fileInfo.className = 'file-info';
+                fileInfo.textContent = `${file.name} (${formatSize(file.size)})`;
+                fileItem.appendChild(fileInfo);
 
-                const nameDiv = document.createElement('div');
-                nameDiv.className = 'file-name';
-                nameDiv.textContent = file.name;
-
-                const sizeDiv = document.createElement('div');
-                sizeDiv.className = 'file-size';
-                sizeDiv.textContent = formatFileSize(file.size);
-
-                const progressBar = document.createElement('div');
-                progressBar.className = 'progress-bar';
-                const progress = document.createElement('div');
-                progress.className = 'progress';
-                progress.style.width = fileObj.progress + '%';
-                progressBar.appendChild(progress);
-
-                fileInfo.appendChild(nameDiv);
-                fileInfo.appendChild(sizeDiv);
-                fileInfo.appendChild(progressBar);
-
-                const delBtn = document.createElement('button');
-                delBtn.className = 'delete-btn';
-                delBtn.textContent = 'Delete';
-                delBtn.onclick = () => {
-                    files.splice(idx, 1);
-                    renderFileList();
-                };
-
-                div.appendChild(fileInfo);
-
-                // Preview media files
-                if (file.type.startsWith('audio/')) {
+                // Preview media
+                if(file.type.startsWith('audio/')) {
                     const audio = document.createElement('audio');
                     audio.controls = true;
-                    audio.className = 'preview';
                     audio.src = URL.createObjectURL(file);
-                    fileInfo.appendChild(audio);
-                } else if (file.type.startsWith('video/')) {
+                    fileItem.appendChild(audio);
+                }
+                else if(file.type.startsWith('video/')) {
                     const video = document.createElement('video');
                     video.controls = true;
-                    video.width = 320;
-                    video.height = 180;
-                    video.className = 'preview';
                     video.src = URL.createObjectURL(file);
-                    fileInfo.appendChild(video);
-                } else if (file.type.startsWith('image/')) {
+                    fileItem.appendChild(video);
+                }
+                else if(file.type.startsWith('image/')) {
                     const img = document.createElement('img');
-                    img.className = 'preview';
-                    img.style.maxHeight = '200px';
                     img.src = URL.createObjectURL(file);
-                    fileInfo.appendChild(img);
+                    fileItem.appendChild(img);
                 }
 
-                div.appendChild(delBtn);
-                fileListDiv.appendChild(div);
+                // Delete button
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.onclick = () => {
+                    uploadedFiles.splice(index, 1);
+                    displayFiles();
+                };
+                fileItem.appendChild(deleteBtn);
 
-                // Simulate upload progress
-                simulateUpload(progress, idx);
+                fileList.appendChild(fileItem);
             });
         }
 
-        function simulateUpload(progressElement, fileIndex) {
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += Math.random() * 30;
-                if (progress > 100) {
-                    progress = 100;
-                    clearInterval(interval);
-                }
-                files[fileIndex].progress = progress;
-                progressElement.style.width = progress + '%';
-            }, 500);
+        // Format file size
+        function formatSize(bytes) {
+            if(bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i)) + ' ' + sizes[i];
         }
     </script>
 </body>
