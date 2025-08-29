@@ -1,11 +1,30 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Basic Video Player</title>
+  <meta charset="UTF-8">
+  <title>Media & Document Uploader</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <video width="800" controls>
-        <source src="Jeene Laga Hoon Lyrical - Ramaiya Vastavaiya_Girish Kumar, Shruti Haasan _Atif Aslam, Shreya Ghoshal (1).mp4" type="video/mp4">
-    </video>
+  <div class="container">
+    <h1>Upload & Preview Files</h1>
+    
+    <form id="uploadForm">
+      <input 
+        type="file" 
+        id="fileInput" 
+        multiple 
+        accept="audio/*,video/*,.pdf,.txt" 
+      />
+    </form>
+    
+    <button id="shareBtn">Share Screen</button>
+    <video id="screenPreview" autoplay muted hidden></video>
+    
+    <h2>Gallery</h2>
+    <div id="gallery" class="gallery"></div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
