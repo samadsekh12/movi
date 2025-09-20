@@ -1,30 +1,281 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
-  <meta charset="UTF-8">
-  <title>Media & Document Uploader</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Server-less Android App আইডিয়া (৫২)</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #22d3ee;
+      --accent-2: #7c3aed;
+      --border: #1f2937;
+      --highlight: #0ea5e9;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: linear-gradient(180deg, #0b1022, #0f172a 25%, #0f172a 100%);
+      color: var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans", "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      line-height: 1.6;
+    }
+    header {
+      position: sticky; top: 0; z-index: 10;
+      background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+    }
+    .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+    .title {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    h1 {
+      margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.3px;
+    }
+    .count-badge {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white; padding: 6px 10px; border-radius: 999px; font-size: 13px; font-weight: 700;
+      box-shadow: 0 4px 20px rgba(124, 58, 237, 0.35);
+    }
+    .toolbar {
+      margin-top: 12px; display: grid; grid-template-columns: 1fr auto; gap: 10px;
+    }
+    .search {
+      display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--border);
+      border-radius: 10px; background: #0b1222;
+    }
+    .search input {
+      flex: 1; background: transparent; border: none; outline: none; color: var(--text);
+      font-size: 14px;
+    }
+    .btn {
+      padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border);
+      background: #111827; color: var(--text); cursor: pointer; font-weight: 600; font-size: 14px;
+    }
+    .btn:hover { border-color: var(--highlight); box-shadow: 0 0 0 3px rgba(14,165,233,0.15); }
+    .panel {
+      margin-top: 16px; background: #0b1222; border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+    }
+    table {
+      width: 100%; border-collapse: collapse;
+    }
+    thead {
+      background: #0b1222; position: sticky; top: 61px; z-index: 5;
+      border-bottom: 1px solid var(--border);
+    }
+    th, td {
+      padding: 12px 14px; text-align: left; vertical-align: top; font-size: 14px;
+      border-bottom: 1px solid #111827;
+    }
+    th {
+      color: #cbd5e1; user-select: none; white-space: nowrap;
+    }
+    th.sortable { cursor: pointer; }
+    th.sortable span { color: var(--muted); font-size: 12px; margin-left: 6px; }
+    tbody tr:hover { background: rgba(34, 211, 238, 0.05); }
+    .muted { color: var(--muted); }
+    footer {
+      border-top: 1px solid var(--border); margin-top: 24px;
+      color: var(--muted); font-size: 13px;
+    }
+    .note {
+      font-size: 13px; color: var(--muted); margin-top: 8px;
+    }
+    @media (max-width: 720px) {
+      th:nth-child(3), td:nth-child(3) { display: none; } /* কাজ কলাম লম্বা হলে ছোট স্ক্রিনে হাইড */
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Upload & Preview Files</h1>
-    
-    <form id="uploadForm">
-      <input 
-        type="file" 
-        id="fileInput" 
-        multiple 
-        accept="audio/*,video/*,.pdf,.txt" 
-      />
-    </form>
-    
-    <button id="shareBtn">Share Screen</button>
-    <video id="screenPreview" autoplay muted hidden></video>
-    
-    <h2>Gallery</h2>
-    <div id="gallery" class="gallery"></div>
-  </div>
+  <header>
+    <div class="container">
+      <div class="title">
+        <h1>Server-less Android App আইডিয়া</h1>
+        <div class="count-badge">মোট ৫২</div>
+      </div>
+      <div class="toolbar">
+        <label class="search" aria-label="সার্চ">
+          <svg width="18" height="18" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="M21 21l-4.3-4.3"></path>
+          </svg>
+          <input id="search" type="search" placeholder="নাম/কীওয়ার্ড দিয়ে খুঁজুন (যেমন: calculator, quiz, health)..." />
+        </label>
+        <button class="btn" id="copyBtn">কপি HTML</button>
+      </div>
+      <p class="note">টিপ: কলাম হেডারে ক্লিক করে সাজান (Sort)। সার্চ বক্সে টাইপ করলে লাইভ ফিল্টার হবে।</p>
+    </div>
+  </header>
 
-  <script src="script.js"></script>
+  <main class="container">
+    <section class="panel">
+      <table id="appsTable">
+        <thead>
+          <tr>
+            <th class="sortable" data-key="id"># <span>↕</span></th>
+            <th class="sortable" data-key="name">অ্যাপ নাম <span>↕</span></th>
+            <th>কাজ</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </section>
+
+    <section class="panel" style="margin-top:16px;">
+      <table id="trackTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>অ্যাপ নাম</th>
+            <th class="muted">ব্যবহারকারী সংখ্যা</th>
+            <th class="muted">ডাউনলোড</th>
+            <th class="muted">আয় (₹)</th>
+          </tr>
+        </thead>
+        <tbody id="trackBody"></tbody>
+      </table>
+    </section>
+
+    <footer class="container">
+      <p>এই তালিকা অফলাইন/সার্ভার-লেস অ্যাপ আইডিয়ার জন্য। নিচের ট্র্যাকিং টেবিলে আপনি ভবিষ্যতের বাস্তব ডেটা আপডেট করতে পারবেন।</p>
+    </footer>
+  </main>
+
+  <script>
+    const ideas = [
+      { id: 1, name: "To-Do List App", work: "কাজের তালিকা তৈরি, সম্পন্ন করা, মুছে ফেলা" },
+      { id: 2, name: "Note Taking App", work: "নোট লেখা, সংরক্ষণ, খোঁজা" },
+      { id: 3, name: "Expense Tracker", work: "আয়-ব্যয় রেকর্ড রাখা" },
+      { id: 4, name: "Habit Tracker", work: "অভ্যাস ট্র্যাক করা, রিমাইন্ডার" },
+      { id: 5, name: "Grocery List App", work: "বাজারের তালিকা তৈরি ও সম্পাদনা" },
+      { id: 6, name: "Daily Journal App", work: "প্রতিদিনের ডায়েরি লেখা" },
+      { id: 7, name: "Countdown Timer", work: "ইভেন্টের জন্য সময় গণনা" },
+      { id: 8, name: "Alarm Clock", work: "এলার্ম সেট করা ও চালানো" },
+      { id: 9, name: "Local Calendar", work: "ইভেন্ট যোগ করা, রিমাইন্ডার" },
+      { id: 10, name: "Password Manager", work: "পাসওয়ার্ড সংরক্ষণ (এনক্রিপ্টেডভাবে)" },
+      { id: 11, name: "Flashcard Study App", work: "পড়ার জন্য ফ্ল্যাশকার্ড তৈরি, কুইজ মোড" },
+      { id: 12, name: "Local Quiz App", work: "অফলাইন কুইজ, স্কোর দেখা" },
+      { id: 13, name: "Offline Dictionary", work: "শব্দ খোঁজা, সংজ্ঞা দেখা" },
+      { id: 14, name: "Math Formula Reference", work: "গণিত সূত্র দেখানো" },
+      { id: 15, name: "Periodic Table Explorer", work: "মৌলিক পদার্থের তথ্য দেখানো" },
+      { id: 16, name: "Language Learning App", work: "ভাষা শেখার জন্য প্রি-লোডেড কনটেন্ট" },
+      { id: 17, name: "Spelling Practice App", work: "বানান শেখার অনুশীলন" },
+      { id: 18, name: "Offline Translator", work: "প্রি-লোডেড বাক্য অনুবাদ" },
+      { id: 19, name: "GK Trivia App", work: "সাধারণ জ্ঞান কুইজ" },
+      { id: 20, name: "Coding Concepts Guide", work: "প্রোগ্রামিং ধারণা ব্যাখ্যা করা" },
+      { id: 21, name: "BMI Calculator", work: "BMI হিসাব করা" },
+      { id: 22, name: "Water Intake Tracker", work: "পানি পান করার রেকর্ড রাখা" },
+      { id: 23, name: "Workout Logger", work: "ব্যায়ামের রেকর্ড রাখা" },
+      { id: 24, name: "Meditation Timer", work: "মেডিটেশনের সময় গণনা" },
+      { id: 25, name: "Mood Tracker", work: "প্রতিদিনের মুড লগ করা" },
+      { id: 26, name: "Sleep Tracker", work: "ঘুমের সময় রেকর্ড রাখা" },
+      { id: 27, name: "Step Counter", work: "সেন্সর দিয়ে পদক্ষেপ গণনা" },
+      { id: 28, name: "Yoga Pose Guide", work: "যোগ ব্যায়ামের ছবি ও তথ্য" },
+      { id: 29, name: "Calorie Counter", work: "ক্যালোরি হিসাব (ম্যানুয়ালি)" },
+      { id: 30, name: "Health Tips Viewer", work: "স্বাস্থ্য বিষয়ক টিপস দেখানো" },
+      { id: 31, name: "Drawing App", work: "আঙুল দিয়ে আঁকা, ছবি সংরক্ষণ" },
+      { id: 32, name: "Doodle Pad", work: "সিম্পল ডুডল আঁকা" },
+      { id: 33, name: "Color Picker & Mixer", work: "রঙ নির্বাচন ও মিক্স" },
+      { id: 34, name: "Poetry Writing App", work: "কবিতা লেখা ও সংরক্ষণ" },
+      { id: 35, name: "Story Builder", work: "গল্প তৈরি ও সংরক্ষণ" },
+      { id: 36, name: "Meme Creator", work: "লোকাল ইমেজ দিয়ে মিম তৈরি" },
+      { id: 37, name: "Music Practice Log", work: "মিউজিক অনুশীলনের রেকর্ড" },
+      { id: 38, name: "Lyrics Organizer", work: "গান ও লিরিক সংরক্ষণ" },
+      { id: 39, name: "Offline Puzzle Game", work: "ধাঁধা বা পাজল গেম" },
+      { id: 40, name: "Sudoku Game", work: "সডোকু খেলা অফলাইনে" },
+      { id: 41, name: "Unit Converter", work: "ইউনিট রূপান্তর" },
+      { id: 42, name: "Age Calculator", work: "বয়স হিসাব করা" },
+      { id: 43, name: "Loan EMI Calculator", work: "লোনের EMI হিসাব" },
+      { id: 44, name: "Tip Calculator", work: "টিপ হিসাব করা" },
+      { id: 45, name: "Currency Converter", work: "স্থির রেট দিয়ে রূপান্তর" },
+      { id: 46, name: "GPA Calculator", work: "GPA হিসাব করা" },
+      { id: 47, name: "Discount Calculator", work: "ছাড়ের হিসাব" },
+      { id: 48, name: "Fuel Efficiency Tracker", work: "গাড়ির মাইলেজ রেকর্ড" },
+      { id: 49, name: "Time Zone Converter", work: "সময় অঞ্চল রূপান্তর" },
+      { id: 50, name: "QR Code Scanner", work: "QR স্ক্যান করে তথ্য দেখানো (ইন্টারনেট ছাড়া)" },
+      { id: 51, name: "File Hide App", work: "লোকাল ফাইল/ফোল্ডার পিন/পাসওয়ার্ডে লুকানো" },
+      { id: 52, name: "Calculator + Media File Hide App", work: "ক্যালকুলেটর + গোপন মিডিয়া ভল্ট (ভিডিও/অডিও/ফটো)" },
+    ];
+
+    const tbody = document.getElementById('tbody');
+    const trackBody = document.getElementById('trackBody');
+
+    function renderTables(rows) {
+      // Main ideas table
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td>${r.id}</td>
+          <td>${r.name}</td>
+          <td class="muted">${r.work}</td>
+        </tr>
+      `).join('');
+
+      // Tracking table (empty fields for future data entry)
+      trackBody.innerHTML = rows.map(r => `
+        <tr>
+          <td>${r.id}</td>
+          <td>${r.name}</td>
+          <td contenteditable="true" class="muted" data-field="users" data-id="${r.id}"></td>
+          <td contenteditable="true" class="muted" data-field="downloads" data-id="${r.id}"></td>
+          <td contenteditable="true" class="muted" data-field="earnings" data-id="${r.id}"></td>
+        </tr>
+      `).join('');
+    }
+
+    // Initial render
+    renderTables(ideas);
+
+    // Search / Filter
+    const search = document.getElementById('search');
+    search.addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      const filtered = ideas.filter(r =>
+        String(r.id).includes(q) ||
+        r.name.toLowerCase().includes(q) ||
+        r.work.toLowerCase().includes(q)
+      );
+      renderTables(filtered);
+    });
+
+    // Sort
+    const table = document.getElementById('appsTable');
+    let sortState = { key: 'id', dir: 1 };
+    function sortRows(key) {
+      sortState.dir = (sortState.key === key) ? -sortState.dir : 1;
+      sortState.key = key;
+      const sorted = [...ideas].sort((a, b) => {
+        const va = (a[key] + '').toLowerCase();
+        const vb = (b[key] + '').toLowerCase();
+        if (va < vb) return -1 * sortState.dir;
+        if (va > vb) return 1 * sortState.dir;
+        return 0;
+      });
+      const q = search.value.toLowerCase().trim();
+      const rows = q ? sorted.filter(r =>
+        String(r.id).includes(q) ||
+        r.name.toLowerCase().includes(q) ||
+        r.work.toLowerCase().includes(q)
+      ) : sorted;
+      renderTables(rows);
+    }
+    table.querySelectorAll('th.sortable').forEach(th => {
+      th.addEventListener('click', () => sortRows(th.dataset.key));
+    });
+
+    // Copy HTML button
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      try {
+        const html = document.documentElement.outerHTML;
+        await navigator.clipboard.writeText(html);
+        const btn = document.getElementById('copyBtn');
+        const old = btn.textContent;
+        btn.textContent = "কপি হয়েছে ✅";
+        setTimeout(() => (btn.textContent = old), 1500);
+      } catch (e) {
+        alert("কপি করা যায়নি। ব্রাউজারের পারমিশন চেক করুন।");
+      }
+    });
+  </script>
 </body>
 </html>
